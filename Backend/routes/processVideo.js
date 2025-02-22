@@ -6,7 +6,7 @@ const path = require("path");
 const dotenv = require("dotenv");
 const envFile = process.env.NODE_ENV === "production" ? ".env.production" : ".env.development";
 dotenv.config({ path: envFile})
-const { S3Client } = require("@aws-sdk/client-s3");
+const { S3Client, GetObjectCommand } = require("@aws-sdk/client-s3");
 
 // initialising s3 client for uploading vids to bucket
 const s3 = new S3Client({
@@ -17,7 +17,6 @@ const s3 = new S3Client({
     },
 });
 
-// S3 Bucket Name
 const BUCKET_NAME = "video-uploads-editor";
 
 router.post("/process", async (req, res) => {
@@ -34,24 +33,38 @@ router.post("/process", async (req, res) => {
 
         await Promise.all(downloadPromises);
 
-        const inputVideos = videoFiles.map(file => path.join(__dirname, "downloads", file)).join("|");
+        // Create a temporary file list for FFmpeg because concat WONT WORKKKKK
+        const fileListPath = path.join(__dirname, "downloads", "file_list.txt");
+        const fileListContent = videoFiles
+            .map(file => `file '${path.join(__dirname, "downloads", file).replace(/\\/g, "/")}'`)
+            .join("\n");
+
+        fs.writeFileSync(fileListPath, fileListContent);
+
         const outputVideo = path.join(__dirname, "processed", "final_vlog.mp4");
 
-        // Run FFmpeg command
-        exec(`ffmpeg -i "concat:${inputVideos}" -c copy ${outputVideo}`, async (error, stdout, stderr) => {
+        // FFmpeg command using file list
+        const ffmpegCommand = `ffmpeg -f concat -safe 0 -i "${fileListPath}" -c copy "${outputVideo}"`;
+        console.log("Running command:", ffmpegCommand);  // Debugging output
+
+        exec(ffmpegCommand, async (error, stdout, stderr) => {
             if (error) {
                 console.error(`Error: ${stderr}`);
-                return res.status(500).json({ error: "Video processing failed" });
+                return res.status(500).json({ error: "Video processing failed", details: stderr });
             }
             console.log(`Success: ${stdout}`);
 
-            // Delete downloaded files after processing
+            // Delete downloaded files and temporary list after processing :))))
             videoFiles.forEach(file => {
                 const filePath = path.join(__dirname, "downloads", file);
                 if (fs.existsSync(filePath)) {
                     fs.unlinkSync(filePath);
                 }
             });
+
+            if (fs.existsSync(fileListPath)) {
+                fs.unlinkSync(fileListPath);
+            }
 
             res.json({ message: "Processing complete", outputVideo });
         });
@@ -68,18 +81,28 @@ router.get("/test", (req, res) => {
 
 // Function to download a file from S3
 async function downloadFromS3(fileName, outputPath) {
-    return new Promise((resolve, reject) => {
+    try {
         const params = {
             Bucket: BUCKET_NAME,
             Key: `uploads/${fileName}`
         };
 
+        // Send request to S3
+        const command = new GetObjectCommand(params);
+        const { Body } = await s3.send(command);
+
+        // Save file locally
         const fileStream = fs.createWriteStream(outputPath);
-        s3.getObject(params).createReadStream()
-            .on("error", reject)
-            .pipe(fileStream)
-            .on("finish", resolve);
-    });
+        return new Promise((resolve, reject) => {
+            Body.pipe(fileStream)
+                .on("error", reject)
+                .on("finish", resolve);
+        });
+
+    } catch (error) {
+        console.error("Error downloading from S3:", error);
+        throw error;
+    }
 }
 
 module.exports = router;
