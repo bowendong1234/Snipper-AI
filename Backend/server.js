@@ -46,7 +46,18 @@ app.get("/generate-upload-url", async (req, res) => {
     }
 });
 
+console.log("Registered Routes:");
+app._router.stack.forEach((middleware) => {
+    if (middleware.route) {
+        console.log(middleware.route.methods, middleware.route.path);
+    } else if (middleware.name === "router") {
+        middleware.handle.stack.forEach((nestedMiddleware) => {
+            if (nestedMiddleware.route) {
+                console.log(nestedMiddleware.route.methods, nestedMiddleware.route.path);
+            }
+        });
+    }
+});
 
-console.log(app._router.stack.map(layer => layer.route?.path).filter(Boolean));
 
-app.listen(5001, () => console.log("Server running on port 5001"));
+app.listen(5000, () => console.log("Server running on port 5000"));
