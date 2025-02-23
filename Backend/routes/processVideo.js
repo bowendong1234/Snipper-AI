@@ -7,6 +7,7 @@ const dotenv = require("dotenv");
 const envFile = process.env.NODE_ENV === "production" ? ".env.production" : ".env.development";
 dotenv.config({ path: envFile})
 const { S3Client, GetObjectCommand } = require("@aws-sdk/client-s3");
+const { runVAD, extractAudio } = require("./processAudio")
 
 // initialising s3 client for uploading vids to bucket
 const s3 = new S3Client({
@@ -19,20 +20,26 @@ const s3 = new S3Client({
 
 const BUCKET_NAME = "video-uploads-editor";
 
+// Base API method that basically triggers EVERYTHING
 router.post("/process", async (req, res) => {
     try {
         const { videoFiles } = req.body;
         if (!videoFiles || videoFiles.length === 0) {
             return res.status(400).json({ error: "No videos provided" });
         }
-
+        
+        // downloading raw videos from S3
         const downloadPromises = videoFiles.map(async (file) => {
             const filePath = path.join(__dirname, "downloads", file);
             return downloadFromS3(file, filePath);
         });
-
         await Promise.all(downloadPromises);
 
+        // run silvero VAD on each vid to see where the audio is silent to cut those parts out
+        console.log("Processing video audios for speech detection...");
+        await processVideoAudios(videoFiles);
+        console.log("Speech detection completed!");
+    
         // Create a temporary file list for FFmpeg because concat WONT WORKKKKK
         const fileListPath = path.join(__dirname, "downloads", "file_list.txt");
         const fileListContent = videoFiles
@@ -104,5 +111,31 @@ async function downloadFromS3(fileName, outputPath) {
         throw error;
     }
 }
+
+async function processVideoAudios(videoFiles) {
+    for (const file of videoFiles) {
+        const videoPath = path.join(__dirname, "downloads", file);
+        const audioPath = path.join(__dirname, "audio", `${path.basename(file, path.extname(file))}.wav`);
+        
+        // Extracting audio
+        try {
+            await extractAudio(videoPath, audioPath);
+        } catch (error) {
+            console.error("Error extracting audio:", error);
+            continue; // Skipping if it fails lol
+        }
+
+        // Run VAD to detect speech timestamps
+        try {
+            const timestamps = await runVAD(audioPath);
+            console.log(`Speech timestamps for ${file}:`, timestamps);
+            // Store timestamps for later trimming
+        } catch (error) {
+            console.error("Error running VAD:", error);
+        }
+    }
+}
+
+
 
 module.exports = router;
