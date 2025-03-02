@@ -13,7 +13,6 @@ model, utils = torch.hub.load('snakers4/silero-vad', model='silero_vad', force_r
 
 def detect_speech(audio_path):
     try:
-        print("is this even happening")
         wav, sr = torchaudio.load(audio_path)
         
         # Convert stereo to mono if needed
@@ -25,8 +24,10 @@ def detect_speech(audio_path):
         
         # Convert timestamps to seconds
         timestamps = [(ts['start'] / sr, ts['end'] / sr) for ts in speech_timestamps]
-        print(json.dumps(timestamps))
-        return timestamps
+        
+        # Print the result in JSON format for Node.js to parse instead of returning
+        print(json.dumps({"timestamps": timestamps}))
+        sys.exit(0)  # Ensure clean exit
     except Exception as e:
         print(json.dumps({"error": str(e)}))
         sys.exit(1)
@@ -34,4 +35,3 @@ def detect_speech(audio_path):
 if __name__ == "__main__":
     audio_file = sys.argv[1]
     timestamps = detect_speech(audio_file)
-    print(timestamps)  # Output timestamps in JSON format

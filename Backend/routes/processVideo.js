@@ -37,8 +37,9 @@ router.post("/process", async (req, res) => {
 
         // run silvero VAD on each vid to see where the audio is silent to cut those parts out
         console.log("Processing video audios for speech detection...");
-        await processVideoAudios(videoFiles);
+        const timestamps = await processVideoAudios(videoFiles);
         console.log("Speech detection completed!");
+        console.log("timestamps: ", timestamps)
     
         // Create a temporary file list for FFmpeg because concat WONT WORKKKKK
         const fileListPath = path.join(__dirname, "downloads", "file_list.txt");
@@ -69,6 +70,7 @@ router.post("/process", async (req, res) => {
                 }
             });
 
+            // this deletes the .txt file
             if (fs.existsSync(fileListPath)) {
                 fs.unlinkSync(fileListPath);
             }
@@ -113,27 +115,32 @@ async function downloadFromS3(fileName, outputPath) {
 }
 
 async function processVideoAudios(videoFiles) {
-    for (const file of videoFiles) {
+    const timestamps = {};
+    const processingPromises = videoFiles.map(async (file) => {
         const videoPath = path.join(__dirname, "downloads", file);
         const audioPath = path.join(__dirname, "audio", `${path.basename(file, path.extname(file))}.wav`);
         
-        // Extracting audio
         try {
+            // Extracting audio
             await extractAudio(videoPath, audioPath);
-        } catch (error) {
-            console.error("Error extracting audio:", error);
-            continue; // Skipping if it fails lol
-        }
 
-        // Run VAD to detect speech timestamps
-        try {
-            const timestamps = await runVAD(audioPath);
-            console.log(`Speech timestamps for ${file}:`, timestamps);
-            // Store timestamps for later trimming
+            // Run VAD to detect speech timestamps
+            const fileTimestamps = await runVAD(audioPath);
+            timestamps[file] = fileTimestamps; // Store timestamps
+
+            console.log(`Speech timestamps for ${file}:`, fileTimestamps);
         } catch (error) {
-            console.error("Error running VAD:", error);
+            console.error(`Error processing ${file}:`, error);
+        } finally {
+            // delete audio files!!!
+            if (fs.existsSync(audioPath)) {
+                fs.unlinkSync(audioPath);
+            }
         }
-    }
+    });
+
+    await Promise.all(processingPromises);
+    return timestamps;
 }
 
 
