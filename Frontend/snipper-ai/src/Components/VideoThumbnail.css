@@ -3,11 +3,13 @@
     flex-direction: column;
     justify-content: left;
     width: 220px;
-    cursor: grab;
     border-radius: 15px;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
-    background-color: rgb(255, 219, 99);
+    box-shadow: 3px 3px 6px rgba(255, 197, 39, 0.596);
+    background-color: rgb(236, 205, 103);
     padding-top: 5px;
+    border: solid;
+    border-color: rgb(255, 219, 99);
+    margin-bottom: 5px;
 }
 
 .thumbnail {
@@ -18,5 +20,28 @@
 .filename-text {
     font: 0.8em sans-serif;
     margin-left: 10px;
-    margin-top: 5px
+
+}
+
+.filename-and-bin-container {
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+}
+
+.delete-button {
+    pointer-events: auto;
+    z-index: 10;
+    border: none;
+    cursor: pointer;
+    appearance: none;
+    background-color: inherit;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: filter 0.3s ease;
+}
+
+.delete-button:hover {
+    filter: invert(17%) sepia(92%) saturate(7495%) hue-rotate(357deg) brightness(98%) contrast(120%);
 }
