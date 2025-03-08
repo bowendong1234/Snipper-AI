@@ -5,44 +5,16 @@
   gap: 15px;
   background: #000000;
   padding: 20px;
-
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-}
-
-.file-input {
-  padding: 10px;
-  border: 2px dashed #007bff;
-  border-radius: 5px;
-  background: white;
-  cursor: pointer;
 }
 
 .thumbnails-container {
   display: flex;
   gap: 10px;
   overflow-x: auto;
-
+  scrollbar-width: thin;
+  scrollbar-color: rgb(151, 151, 151) black;
 }
-
-.upload-button {
-  background: #007bff;
-  color: white;
-  border: none;
-  padding: 10px 20px;
-  border-radius: 5px;
-  cursor: pointer;
-  transition: 0.3s;
-}
-
-.upload-button:disabled {
-  background: gray;
-  cursor: not-allowed;
-}
-
-.upload-button:hover:not(:disabled) {
-  background: #0056b3;
-}
-
 
 input[type="file"] {
   display: none;
@@ -50,7 +22,7 @@ input[type="file"] {
 
 .choose-file-button{
   height: 245px;
-  width: 220px;
+  min-width: 220px;
   display: flex;
   justify-content: center;
   flex-direction: column;
@@ -59,7 +31,7 @@ input[type="file"] {
   background: #000000;
   color: rgb(255, 255, 255);
   border: solid;
-  border-radius: 15px;
+  border-radius: 9px;
   cursor: pointer;
   transition: 0.3s ease-in-out;
   border-color: #fff;
@@ -90,12 +62,11 @@ input[type="file"] {
 
 .drag-handle {
   display: flex;
-  background-color:rgb(236, 205, 103);
-  border-radius: 15px;
+  background-color:#fff;
+  border-radius: 7px 7px 0px 0px;
   justify-content: center;
   align-items: center;
   cursor: move;
-  margin-bottom: 3px;
-  box-shadow: 3px 3px 6px rgba(255, 197, 39, 0.596);
-  width: 220px
+  width: 220px;
+  padding: 5px;
 }

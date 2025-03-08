@@ -37,7 +37,7 @@ const VideoThumbnail = memo(({ file, deleteFile }) => {
                 </button>
             </div>
             <div className="thumbnail">
-                <video src={thumbnail} width="200px" height="170px" controls />
+                <video src={thumbnail} width="200px" height="180px" controls />
             </div>
         </div>
     );

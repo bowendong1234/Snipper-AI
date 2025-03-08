@@ -30,7 +30,7 @@ const SortableItem = memo(({ file, deleteFile }) => {
     <div ref={setNodeRef} style={style}>
       {/* Drag handle area */}
       <div className="drag-handle" {...attributes} {...listeners}>
-        ⋮⋮ {/* Drag indicator */}
+        <img src="./drag-bar.svg" style={{ width: 15, height: 7, objectFit: "cover" }}></img>
       </div>
       <VideoThumbnail file={file} deleteFile={deleteFile} />
     </div>

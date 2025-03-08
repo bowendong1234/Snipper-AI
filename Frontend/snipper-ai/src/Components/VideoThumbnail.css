@@ -3,12 +3,9 @@
     flex-direction: column;
     justify-content: left;
     width: 220px;
-    border-radius: 15px;
-    box-shadow: 3px 3px 6px rgba(255, 197, 39, 0.596);
-    background-color: rgb(236, 205, 103);
+    border-radius: 0px 0px 7px 7px;
+    background-color: #fff;
     padding-top: 5px;
-    border: solid;
-    border-color: rgb(255, 219, 99);
     margin-bottom: 5px;
 }
 
