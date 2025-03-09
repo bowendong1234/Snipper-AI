@@ -7,7 +7,6 @@ import { restrictToHorizontalAxis } from '@dnd-kit/modifiers';
 import { CSS } from "@dnd-kit/utilities";
 import VideoThumbnail from "./VideoThumbnail";
 import "./Upload.css";
-import { Scrollbar } from 'smooth-scrollbar-react';
 
 const API_URL = process.env.REACT_APP_API_URL;
 
@@ -30,16 +29,16 @@ const SortableItem = memo(({ file, deleteFile }) => {
     <div ref={setNodeRef} style={style}>
       {/* Drag handle area */}
       <div className="drag-handle" {...attributes} {...listeners}>
-        <img src="./drag-bar.svg" style={{ width: 15, height: 7, objectFit: "cover" }}></img>
+        <img src="./drag-bar.svg" alt="drag bar icon" style={{ width: 15, height: 7, objectFit: "cover" }}></img>
       </div>
       <VideoThumbnail file={file} deleteFile={deleteFile} />
     </div>
   );
 });
 
-const Upload = () => {
+const Upload = ({initiateVideoEditing}) => {
   const [files, setFiles] = useState([]);
-  const [uploading, setUploading] = useState(false);
+
   useEffect(() => {
     console.log("Files state updated:", files);
   }, [files]);
@@ -63,12 +62,15 @@ const Upload = () => {
   const handleUpload = async () => {
     if (files.length === 0) return alert("Please select at least one video!");
 
-    setUploading(true);
     const uniqueID = uuidv4();
+    localStorage.setItem("cutID", uniqueID)
 
     console.log("Unique ID:", uniqueID);
     console.log("Final video order:", files.map(file => file.name));
 
+    initiateVideoEditing(files, {snip: true, captions: true})
+
+    // Uploading vids to S3
     try {
       for (const file of files) {
         const response = await axios.get(`${API_URL}/generate-upload-url`, {
@@ -84,7 +86,6 @@ const Upload = () => {
       console.error("Upload Failed:", error);
     }
 
-    setUploading(false);
   };
 
   const handleDragEnd = (event) => {
@@ -123,8 +124,8 @@ const Upload = () => {
         </SortableContext>
       </DndContext>
       <div className="generate-button-container">
-        <button onClick={handleUpload} disabled={uploading} className="shadow__btn">
-          {uploading ? "Uploading..." : "Generate Final Cut!"}
+        <button onClick={handleUpload} className="shadow__btn">
+          Generate Final Cut!
         </button>
       </div>
     </div>
