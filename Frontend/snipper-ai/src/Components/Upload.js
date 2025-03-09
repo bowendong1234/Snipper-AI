@@ -27,7 +27,6 @@ const SortableItem = memo(({ file, deleteFile }) => {
 
   return (
     <div ref={setNodeRef} style={style}>
-      {/* Drag handle area */}
       <div className="drag-handle" {...attributes} {...listeners}>
         <img src="./drag-bar.svg" alt="drag bar icon" style={{ width: 15, height: 7, objectFit: "cover" }}></img>
       </div>
@@ -65,27 +64,36 @@ const Upload = ({initiateVideoEditing}) => {
     const uniqueID = uuidv4();
     localStorage.setItem("cutID", uniqueID)
 
+    const renamedFiles = renameFiles(files, uniqueID)
+
     console.log("Unique ID:", uniqueID);
-    console.log("Final video order:", files.map(file => file.name));
+    console.log("Final video order:", renamedFiles.map(file => file.name));
 
-    initiateVideoEditing(files, {snip: true, captions: true})
+    initiateVideoEditing(renamedFiles, {cutID: uniqueID, snip: true, captions: true})
 
-    // Uploading vids to S3
-    try {
-      for (const file of files) {
-        const response = await axios.get(`${API_URL}/generate-upload-url`, {
-          params: { filename: `uploads/${uniqueID}/${file.name}`, fileType: file.type },
-        });
+    // // Uploading vids to S3
+    // try {
+    //   for (const file of files) {
+    //     const response = await axios.get(`${API_URL}/generate-upload-url`, {
+    //       params: { filename: `uploads/${uniqueID}/${file.name}`, fileType: file.type },
+    //     });
 
-        const { uploadURL } = response.data;
-        await axios.put(uploadURL, file, { headers: { "Content-Type": file.type } });
-      }
+    //     const { uploadURL } = response.data;
+    //     await axios.put(uploadURL, file, { headers: { "Content-Type": file.type } });
+    //   }
 
-      alert("Upload Successful!");
-    } catch (error) {
-      console.error("Upload Failed:", error);
-    }
+    //   alert("Upload Successful!");
+    // } catch (error) {
+    //   console.error("Upload Failed:", error);
+    // }
 
+  };
+
+  const renameFiles = (files, uniqueID) => {
+    return files.map(file => {
+        const newName = `${uniqueID}${file.name}`;
+        return new File([file], newName, { type: file.type });
+    });
   };
 
   const handleDragEnd = (event) => {
