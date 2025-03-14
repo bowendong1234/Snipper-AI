@@ -5,9 +5,10 @@ const API_URL = process.env.REACT_APP_API_URL;
 
 const EditSequencer = forwardRef((props, ref) => {
     const [progress, updateProgress] = useState(0)
-    const progressIncrement = 0
+    let progressIncrement = 0
     const progressMessages = {
-        uploadVideos: "Uploading videos...",
+        uploadVideos: "Uploading videos to server...",
+        downloadVideosToServer: "Server is retrieving videos and will begin work shortly...",
         snipVideos: "Cutting out awkward silences...",
         addCaptions: "Adding captions...",
         glueVideosTogether: "Glueing videos together",
@@ -23,6 +24,7 @@ const EditSequencer = forwardRef((props, ref) => {
 
             // setting up required parameters
             const uniqueID = editingParams.cutID
+            const downloadVideosToServer = true
             const videoOrder = files.map(file => file.name)
             const snipVideos = editingParams.snip
             const addCaptions = editingParams.captions
@@ -31,13 +33,17 @@ const EditSequencer = forwardRef((props, ref) => {
             // assigning whether or not to execute a step to this json
             const editStepsEnabled = {
                 snipVideos: snipVideos,
-                addCaptions: addCaptions,
+                downloadVideosToServer: downloadVideosToServer,
+                addCaptions: false, // TODO change to addCaptions once implemented
                 glueVideosTogether: glueVideosTogether
             };
+
+            // calculating the progress increment for the loading/progress bar
             calculateProgressIncrement(editStepsEnabled)
 
             // specifiying request body params
             const requestParameters = {
+                downloadVideosToServer: { "ID": uniqueID, "videoFiles": videoOrder },
                 snipVideos: { "ID": uniqueID, "videoFiles": videoOrder },
                 addCaptions: { "ID": uniqueID, "videoFiles": videoOrder },
                 glueVideosTogether: { "ID": uniqueID, "videoFiles": videoOrder }
@@ -46,26 +52,28 @@ const EditSequencer = forwardRef((props, ref) => {
             await uploadVideos(files, uniqueID)
 
             // building requests
-            const requests = [
-                editStepsEnabled.snipVideos ? () => axios.post("/api/snipVideos", requestParameters.snipVideos) : null,
-                editStepsEnabled.addCaptions ? () => axios.post("/api/addCaptions", requestParameters.addCaptions) : null,
-                editStepsEnabled.glueVideosTogether ? () => axios.post("/api/glueVideosTogether", requestParameters.glueVideosTogether) : null,
-            ].filter(Boolean); // Remove null entries
+            // const requests = [
+            //     editStepsEnabled.downloadVideosToServer ? () => axios.post("/api/downloadVideos", requestParameters.downloadVideosToServer) : null,
+            //     editStepsEnabled.snipVideos ? () => axios.post("/api/snipVideos", requestParameters.snipVideos) : null,
+            //     editStepsEnabled.addCaptions ? () => axios.post("/api/addCaptions", requestParameters.addCaptions) : null,
+            //     editStepsEnabled.glueVideosTogether ? () => axios.post("/api/glueVideosTogether", requestParameters.glueVideosTogether) : null,
+            // ].filter(Boolean); // Remove null entries
 
-            // executing requests
-            for (let i = 0; i < requests.length; i++) {
-                try {
-                    await requests[i](); // Execute only valid requests
-                    updateProgress(prevProgress => prevProgress + progressIncrement)
-                } catch (error) {
-                    console.error(`Request ${i + 1} failed:`, error);
-                    break; // Stop execution if an error occurs
-                }
-            }
+            // // executing requests
+            // for (let i = 0; i < requests.length; i++) {
+            //     try {
+            //         await requests[i](); // Execute only valid requests
+            //         updateProgress(prevProgress => prevProgress + progressIncrement)
+            //     } catch (error) {
+            //         console.error(`Request ${i + 1} failed:`, error);
+            //         break; // Stop execution if an error occurs
+            //     }
+            // }
         },
     }));
 
     const uploadVideos = async (files, uniqueID) => {
+        console.log("Here")
         try {
             // Generate pre-signed URLs for all files in parallel!!!
             const uploadURLs = await Promise.all(
@@ -113,7 +121,7 @@ const EditSequencer = forwardRef((props, ref) => {
 
     // function for calculating the progress increment
     const calculateProgressIncrement = (editStepsEnabled) => {
-        var steps = 2  // default enabled steps are upload and send back
+        var steps = 3  // default enabled steps are upload, download to backend and send back
         if (editStepsEnabled.snipVideos) {
             steps = steps + 1
         }

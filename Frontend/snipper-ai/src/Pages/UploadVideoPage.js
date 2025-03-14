@@ -15,10 +15,12 @@ const UploadVideoPage = () => {
     };
 
     useEffect(() => {
+        console.log("baha")
         if (startProcessing && EditSequencerRef.current) {
             console.log("Processing videos...");
             EditSequencerRef.current.processVideos(pendingFiles, pendingParams);
         }
+        setStartProcessing(false)
     }, [startProcessing]);
 
     return (
