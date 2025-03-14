@@ -29,11 +29,10 @@ const s3 = new S3Client({
 
 app.get("/generate-upload-url", async (req, res) => {
     const { filename, fileType } = req.query;
-    console.log(process.env.AWS_REGION)
 
     const command = new PutObjectCommand({
         Bucket: process.env.S3_BUCKET_NAME,
-        Key: `uploads/${filename}`,
+        Key: filename,
         ContentType: fileType,
     });
 

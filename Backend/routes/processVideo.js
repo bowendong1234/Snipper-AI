@@ -20,6 +20,26 @@ const s3 = new S3Client({
 
 const BUCKET_NAME = "video-uploads-editor";
 
+router.post("/downloadVideos", async (req, res) => {
+    try {
+        const { ID, videoFiles } = req.body;
+        if (!videoFiles || videoFiles.length === 0) {
+            return res.status(400).json({ error: "No videos provided" });
+        }
+
+        // downloading raw videos from S3
+        const downloadPromises = videoFiles.map(async (file) => {
+            const filePath = path.join(__dirname, "downloads", file);
+            return downloadFromS3(file, ID, filePath);
+        });
+        await Promise.all(downloadPromises);
+        res.json({ message: "Success" });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: "Error when downloading to server :(" });
+    }
+});
+
 // Base API method that basically triggers EVERYTHING
 router.post("/process", async (req, res) => {
     try {
@@ -89,11 +109,11 @@ router.get("/test", (req, res) => {
 });
 
 // Function to download a file from S3
-async function downloadFromS3(fileName, outputPath) {
+async function downloadFromS3(fileName, ID, outputPath) {
     try {
         const params = {
             Bucket: BUCKET_NAME,
-            Key: `uploads/${fileName}`
+            Key: `uploads/${ID}/${fileName}`
         };
 
         // Send request to S3
