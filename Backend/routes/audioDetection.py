@@ -3,7 +3,6 @@ import torchaudio
 import numpy as np
 import sys
 from pathlib import Path
-from silero_vad import get_speech_timestamps, save_audio
 import json
 import os
 
