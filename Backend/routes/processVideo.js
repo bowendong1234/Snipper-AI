@@ -19,6 +19,12 @@ const s3 = new S3Client({
     },
 });
 
+console.log('AWS Environment Variables:', {
+    region: process.env.AWS_REGION,
+    hasAccessKey: !!process.env.AWS_ACCESS_KEY_ID,
+    hasSecretKey: !!process.env.AWS_SECRET_ACCESS_KEY
+  });
+  
 const BUCKET_NAME = "video-uploads-editor";
 
 router.post("/downloadVideos", async (req, res) => {
