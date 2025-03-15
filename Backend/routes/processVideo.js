@@ -8,6 +8,7 @@ const envFile = process.env.NODE_ENV === "production" ? ".env.production" : ".en
 dotenv.config({ path: envFile})
 const { S3Client, GetObjectCommand } = require("@aws-sdk/client-s3");
 const { runVAD, extractAudio } = require("./processAudio")
+const {trimVideos} = require("./TrimVideos")
 
 // initialising s3 client for uploading vids to bucket
 const s3 = new S3Client({
@@ -37,6 +38,29 @@ router.post("/downloadVideos", async (req, res) => {
     } catch (err) {
         console.error(err);
         res.status(500).json({ error: "Error when downloading to server :(" });
+    }
+});
+
+router.post("/snipVideos", async (req, res) => {
+    try {
+        const { ID, videoFiles } = req.body;
+        if (!videoFiles || videoFiles.length === 0) {
+            return res.status(400).json({ error: "No videos provided" });
+        }
+
+        // run silvero VAD on each vid to see where the audio is silent to cut those parts out
+        console.log("Processing video audios for speech detection...");
+        const timestamps = await processVideoAudios(videoFiles);
+        console.log("Speech detection completed!");
+        console.log("timestamps: ", timestamps)
+
+        // trim the videos
+        await (trimVideos(timestamps, "downloads"))
+
+        res.json({ message: "Success" });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: "Error when snipping videos" });
     }
 });
 
