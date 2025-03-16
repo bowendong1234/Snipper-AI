@@ -24,7 +24,7 @@ console.log('AWS Environment Variables:', {
     hasAccessKey: !!process.env.AWS_ACCESS_KEY_ID,
     hasSecretKey: !!process.env.AWS_SECRET_ACCESS_KEY
   });
-  
+
 const BUCKET_NAME = "video-uploads-editor";
 
 router.post("/downloadVideos", async (req, res) => {
@@ -37,6 +37,7 @@ router.post("/downloadVideos", async (req, res) => {
         // downloading raw videos from S3
         const downloadPromises = videoFiles.map(async (file) => {
             const filePath = path.join(__dirname, "downloads", file);
+            ensureDirectoryExists(filePath)
             return downloadFromS3(file, ID, filePath);
         });
         await Promise.all(downloadPromises);
@@ -169,7 +170,7 @@ async function processVideoAudios(videoFiles) {
     const processingPromises = videoFiles.map(async (file) => {
         const videoPath = path.join(__dirname, "downloads", file);
         const audioPath = path.join(__dirname, "audio", `${path.basename(file, path.extname(file))}.wav`);
-        
+        ensureDirectoryExists(audioPath)
         try {
             // Extracting audio
             await extractAudio(videoPath, audioPath);
@@ -193,6 +194,14 @@ async function processVideoAudios(videoFiles) {
     return timestamps;
 }
 
-
+// make directory in case it doesnt exist in deployment
+function ensureDirectoryExists(filePath) {
+  const dirname = path.dirname(filePath);
+  if (fs.existsSync(dirname)) {
+    return true;
+  }
+  ensureDirectoryExists(dirname);
+  fs.mkdirSync(dirname);
+}
 
 module.exports = router;
