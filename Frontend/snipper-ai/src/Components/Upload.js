@@ -37,6 +37,9 @@ const SortableItem = memo(({ file, deleteFile }) => {
 
 const Upload = ({ initiateVideoEditing }) => {
   const [files, setFiles] = useState([]);
+  const [snipBoringParts, setSnipBoringParts] = useState(false);
+  const [addCaptions, setAddCaptions] = useState(false);
+  const [addMusic, setAddMusic] = useState(false);
 
   useEffect(() => {
     console.log("Files state updated:", files);
@@ -161,7 +164,39 @@ const Upload = ({ initiateVideoEditing }) => {
 
   return (
     <div className="upload-container">
-
+    <div className="toggle-container">
+      <div className="toggle-item">
+        <label className="toggle-label">
+          <span className="label-text">Snip out boring parts</span>
+          <div 
+            className={`toggle ${snipBoringParts ? 'active' : ''}`}
+            onClick={() => setSnipBoringParts(!snipBoringParts)}
+          >
+            <div className="toggle-switch"></div>
+          </div>
+        </label>
+      </div>
+      
+      <div className="toggle-item disabled">
+        <label className="toggle-label">
+          <span className="label-text">Add captions</span>
+          <div className="toggle disabled">
+            <div className="toggle-switch"></div>
+          </div>
+          <span className="coming-soon">coming soon...</span>
+        </label>
+      </div>
+      
+      <div className="toggle-item disabled">
+        <label className="toggle-label">
+          <span className="label-text">Add music</span>
+          <div className="toggle disabled">
+            <div className="toggle-switch"></div>
+          </div>
+          <span className="coming-soon">coming soon...</span>
+        </label>
+      </div>
+    </div>
       <DndContext collisionDetection={closestCenter} onDragEnd={handleDragEnd} modifiers={[restrictToHorizontalAxis]}>
         <SortableContext items={files.map(file => file.name)}>
           <div className="thumbnails-container">
