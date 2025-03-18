@@ -164,6 +164,11 @@ const Upload = ({ initiateVideoEditing }) => {
 
   return (
     <div className="upload-container">
+    <div className="label-text">Click on the toggles below to enable what edits you would like made to your final video.
+      Once you have uploaded your videos, drag them in the order you want them to be sequenced in for your final video.
+      Please ensure all videos are the same dimensions and the total size of all videos does not exceed 80MB. The adding 
+      of captions and music as well as other features and lowered restrictions will be added soon, stay tuned!
+    </div>
     <div className="toggle-container">
       <div className="toggle-item">
         <label className="toggle-label">
