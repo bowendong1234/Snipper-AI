@@ -1,6 +1,7 @@
 import { React, useState, useRef, useEffect } from 'react';
 import Upload from '../Components/Upload';
 import EditSequencer from '../Components/EditSequencer';
+import './UploadVideoPage.css'
 
 const UploadVideoPage = () => {
     const [startProcessing, setStartProcessing] = useState(false);
@@ -15,7 +16,6 @@ const UploadVideoPage = () => {
     };
 
     useEffect(() => {
-        console.log("baha")
         if (startProcessing && EditSequencerRef.current) {
             console.log("Processing videos...");
             EditSequencerRef.current.processVideos(pendingFiles, pendingParams);
@@ -24,7 +24,7 @@ const UploadVideoPage = () => {
     }, [startProcessing]);
 
     return (
-        <div>
+        <div className="background">
             <Upload initiateVideoEditing={initiateVideoEditing} />
             {startProcessing && <EditSequencer ref={EditSequencerRef} />}
         </div>
