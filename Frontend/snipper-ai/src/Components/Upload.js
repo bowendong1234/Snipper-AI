@@ -73,7 +73,7 @@ const Upload = ({ initiateVideoEditing }) => {
         console.log("Unique ID:", uniqueID);
         console.log("Final video order:", renamedFiles.map(file => file.name));
     
-        initiateVideoEditing(renamedFiles, { cutID: uniqueID, snip: true, captions: true })
+        initiateVideoEditing(renamedFiles, { cutID: uniqueID, snip: snipBoringParts, captions: addCaptions })
     }
 
     // // Uploading vids to S3

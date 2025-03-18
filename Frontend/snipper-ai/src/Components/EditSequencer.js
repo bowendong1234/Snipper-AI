@@ -34,7 +34,7 @@ const EditSequencer = forwardRef((props, ref) => {
             const editStepsEnabled = {
                 snipVideos: snipVideos,
                 downloadVideosToServer: downloadVideosToServer,
-                addCaptions: false, // TODO change to addCaptions once implemented
+                addCaptions: addCaptions,
                 glueVideosTogether: glueVideosTogether
             };
 
@@ -52,12 +52,12 @@ const EditSequencer = forwardRef((props, ref) => {
             await uploadVideos(files, uniqueID)
 
             // building requests
-            // const requests = [
-            //     editStepsEnabled.downloadVideosToServer ? () => axios.post("/api/downloadVideos", requestParameters.downloadVideosToServer) : null,
-            //     editStepsEnabled.snipVideos ? () => axios.post("/api/snipVideos", requestParameters.snipVideos) : null,
-            //     editStepsEnabled.addCaptions ? () => axios.post("/api/addCaptions", requestParameters.addCaptions) : null,
-            //     editStepsEnabled.glueVideosTogether ? () => axios.post("/api/glueVideosTogether", requestParameters.glueVideosTogether) : null,
-            // ].filter(Boolean); // Remove null entries
+            const requests = [
+                editStepsEnabled.downloadVideosToServer ? () => axios.post("/api/downloadVideos", requestParameters.downloadVideosToServer) : null,
+                editStepsEnabled.snipVideos ? () => axios.post("/api/snipVideos", requestParameters.snipVideos) : null,
+                editStepsEnabled.addCaptions ? () => axios.post("/api/addCaptions", requestParameters.addCaptions) : null,
+                editStepsEnabled.glueVideosTogether ? () => axios.post("/api/glueVideosTogether", requestParameters.glueVideosTogether) : null,
+            ].filter(Boolean); // Remove null entries
 
             // // executing requests
             // for (let i = 0; i < requests.length; i++) {
