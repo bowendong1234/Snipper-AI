@@ -67,7 +67,7 @@ const LandingPage = () => {
   }, []);
   
   const handleGetStarted = () => {
-    navigate('/app'); // Navigate to your app page
+    navigate('/editVideo');
   };
   
   return (
