@@ -35,7 +35,7 @@ const SortableItem = memo(({ file, deleteFile }) => {
   );
 });
 
-const Upload = ({initiateVideoEditing}) => {
+const Upload = ({ initiateVideoEditing }) => {
   const [files, setFiles] = useState([]);
 
   useEffect(() => {
@@ -59,17 +59,19 @@ const Upload = ({initiateVideoEditing}) => {
   };
 
   const handleUpload = async () => {
-    if (files.length === 0) return alert("Please select at least one video!");
-
-    const uniqueID = uuidv4();
-    localStorage.setItem("cutID", uniqueID)
-
-    const renamedFiles = renameFiles(files, uniqueID)
-
-    console.log("Unique ID:", uniqueID);
-    console.log("Final video order:", renamedFiles.map(file => file.name));
-
-    initiateVideoEditing(renamedFiles, {cutID: uniqueID, snip: true, captions: true})
+    const isValid = await validateVideos(files);
+    if (isValid) {
+        console.log("All checks passed! Proceed with generation.");
+        const uniqueID = uuidv4();
+        localStorage.setItem("cutID", uniqueID)
+    
+        const renamedFiles = renameFiles(files, uniqueID)
+    
+        console.log("Unique ID:", uniqueID);
+        console.log("Final video order:", renamedFiles.map(file => file.name));
+    
+        initiateVideoEditing(renamedFiles, { cutID: uniqueID, snip: true, captions: true })
+    }
 
     // // Uploading vids to S3
     // try {
@@ -91,8 +93,8 @@ const Upload = ({initiateVideoEditing}) => {
 
   const renameFiles = (files, uniqueID) => {
     return files.map(file => {
-        const newName = `${uniqueID}${file.name}`;
-        return new File([file], newName, { type: file.type });
+      const newName = `${uniqueID}${file.name}`;
+      return new File([file], newName, { type: file.type });
     });
   };
 
@@ -110,6 +112,53 @@ const Upload = ({initiateVideoEditing}) => {
     setFiles(prevFiles => prevFiles.filter(f => f.name !== file.name));
   }, []);
 
+  function validateVideos(files) {
+    if (files.length === 0) {
+        alert("Please select at least one video!");
+        return false;
+    }
+
+    // Check total file size (80MB limit)
+    const maxTotalSize = 80 * 1024 * 1024; // 80MB in bytes
+    const totalSize = Array.from(files).reduce((acc, file) => acc + file.size, 0);
+
+    if (totalSize > maxTotalSize) {
+        alert("Total file size exceeds 80MB. Please select smaller videos.");
+        return false;
+    }
+
+    // Check video dimensions
+    let firstVideoWidth = null;
+    let firstVideoHeight = null;
+
+    const checkDimensions = (file) => {
+        return new Promise((resolve, reject) => {
+            const video = document.createElement("video");
+            video.src = URL.createObjectURL(file);
+
+            video.onloadedmetadata = () => {
+                if (firstVideoWidth === null) {
+                    firstVideoWidth = video.videoWidth;
+                    firstVideoHeight = video.videoHeight;
+                } else if (video.videoWidth !== firstVideoWidth || video.videoHeight !== firstVideoHeight) {
+                    reject("Videos must have the same dimensions!");
+                }
+                resolve();
+            };
+
+            video.onerror = () => reject("Error loading video file.");
+        });
+    };
+
+    return Promise.all(Array.from(files).map(checkDimensions))
+        .then(() => true) // All checks passed
+        .catch((error) => {
+            alert(error);
+            return false;
+        });
+}
+
+
   return (
     <div className="upload-container">
 
@@ -125,14 +174,22 @@ const Upload = ({initiateVideoEditing}) => {
               {/* <img src="/upload-icon.svg" alt="upload icon" style={{ width: 50 }}></img> */}
             </label>
             <input id="file-upload" type="file" multiple onChange={handleFileChange} className="file-input"></input>
-              {files.map(file => (
-                <SortableItem key={file.name} file={file} deleteFile={deleteFile} />
-              ))}
+            {files.map(file => (
+              <SortableItem key={file.name} file={file} deleteFile={deleteFile} />
+            ))}
+            {!files.length ? (
+              <div className="direction-text">
+                Uploaded videos will appear here
+                <span className="btn-arrow">→</span>
+              </div>
+            ) : (
+              <div></div>
+            )}
           </div>
         </SortableContext>
       </DndContext>
       <div className="generate-button-container">
-        <button onClick={handleUpload} className="shadow__btn">
+        <button onClick={handleUpload} className="generate-btn">
           Generate Final Cut!
         </button>
       </div>
