@@ -57,7 +57,7 @@ router.post("/snipVideos", async (req, res) => {
 
         // run silvero VAD on each vid to see where the audio is silent to cut those parts out
         console.log("Processing video audios for speech detection...");
-        const timestamps = await processVideoAudios(videoFiles);
+        const timestamps = await processVideoAudiosWithConcurrency(videoFiles);
         console.log("Speech detection completed!");
         console.log("timestamps: ", timestamps)
 
@@ -194,6 +194,42 @@ async function processVideoAudios(videoFiles) {
     return timestamps;
 }
 
+async function processVideoAudiosWithConcurrency(videoFiles, maxConcurrent = 2) {
+    const timestamps = {};
+    const chunks = [];
+    
+    // Split files into chunks for controlled concurrency
+    for (let i = 0; i < videoFiles.length; i += maxConcurrent) {
+        chunks.push(videoFiles.slice(i, i + maxConcurrent));
+    }
+    
+    // Process each chunk concurrently, but chunks sequentially
+    for (const chunk of chunks) {
+        const chunkPromises = chunk.map(async (file) => {
+            const videoPath = path.join(__dirname, "downloads", file);
+            const audioPath = path.join(__dirname, "audio", `${path.basename(file, path.extname(file))}.wav`);
+            ensureDirectoryExists(path.dirname(audioPath));
+            
+            try {
+                await extractAudio(videoPath, audioPath);
+                const fileTimestamps = await runVAD(audioPath);
+                timestamps[file] = fileTimestamps;
+                console.log(`Speech timestamps for ${file}:`, fileTimestamps);
+            } catch (error) {
+                console.error(`Error processing ${file}:`, error);
+            } finally {
+                if (fs.existsSync(audioPath)) {
+                    fs.unlinkSync(audioPath);
+                }
+            }
+        });
+        
+        await Promise.all(chunkPromises);
+    }
+    
+    return timestamps;
+}
+
 // make directory in case it doesnt exist in deployment
 function ensureDirectoryExists(filePath) {
   const dirname = path.dirname(filePath);
@@ -203,5 +239,8 @@ function ensureDirectoryExists(filePath) {
   ensureDirectoryExists(dirname);
   fs.mkdirSync(dirname);
 }
+
+// TODO: empty directories
+
 
 module.exports = router;
