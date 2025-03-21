@@ -47,10 +47,12 @@ async function trimVideos(timestamps, downloadsDir) {
 
         fs.writeFileSync(fileListPath, fileListContent);
 
-        const finalOutput = path.join(downloadsPath, `trimmed_${fileName}`);
+        // Create a temporary output file
+        const tempOutputName = `temp_output_${fileName}`;
+        const tempOutputPath = path.join(downloadsPath, tempOutputName);
 
         // Make sure we're in the correct working directory for FFmpeg
-        const ffmpegCommand = `cd "${downloadsPath}" && ffmpeg -f concat -safe 0 -i "${fileListName}" -c copy -reset_timestamps 1 "${finalOutput}"`;
+        const ffmpegCommand = `cd "${downloadsPath}" && ffmpeg -f concat -safe 0 -i "${fileListName}" -c copy -reset_timestamps 1 "${tempOutputPath}"`;
         console.log("Running command:", ffmpegCommand);
 
         return new Promise((resolve, reject) => {
@@ -62,8 +64,21 @@ async function trimVideos(timestamps, downloadsDir) {
                 }
                 console.log(`Success: ${stdout}`);
 
-                // Delete temporary files after processing
                 try {
+                    // Temporarily rename original file as backup
+                    const backupName = `backup_${fileName}`;
+                    const backupPath = path.join(downloadsPath, backupName);
+                    fs.renameSync(videoPath, backupPath);
+                    
+                    // Move the temporary output to the original filename
+                    fs.renameSync(tempOutputPath, videoPath);
+                    
+                    // Delete the backup file
+                    if (fs.existsSync(backupPath)) {
+                        fs.unlinkSync(backupPath);
+                    }
+                    
+                    // Delete temporary files after processing
                     tempFiles.forEach(file => {
                         const filePath = path.join(downloadsPath, file);
                         if (fs.existsSync(filePath)) {
@@ -78,8 +93,8 @@ async function trimVideos(timestamps, downloadsDir) {
                     
                     resolve();
                 } catch (cleanupError) {
-                    console.error("Error during cleanup:", cleanupError);
-                    resolve(); // Still resolve even if cleanup fails
+                    console.error("Error during file replacement or cleanup:", cleanupError);
+                    reject(cleanupError);
                 }
             });
         });
